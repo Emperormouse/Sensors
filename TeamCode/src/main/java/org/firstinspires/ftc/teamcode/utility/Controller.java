@@ -35,8 +35,11 @@ public class Controller {
         dpad_left = new Button(() -> pad.dpad_left);
         right_bumper = new Button(() -> pad.right_bumper);
         left_bumper = new Button(() -> pad.left_bumper);
-
+        right_trigger = new Button(() -> pad.right_trigger > 0.05);
+        left_trigger = new Button(() -> pad.left_trigger > 0.05);
         this.pad = pad;
+
+        update();
     }
 
     public void update() {
@@ -50,7 +53,9 @@ public class Controller {
         dpad_left.update();
         right_bumper.update();
         left_bumper.update();
-        right_bumper.update();
-        left_bumper.update();
+        right_trigger.update();
+        left_trigger.update();
+        right_trigger_analogue = pad.right_trigger;
+        left_trigger_analogue = pad.left_trigger;
     }
 }
