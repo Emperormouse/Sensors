@@ -16,11 +16,8 @@ public class Controller {
     public Button right_bumper;
     public Button left_bumper;
 
-    public Button right_trigger;
-    public Button left_trigger;
-
-    public float right_trigger_analogue;
-    public float left_trigger_analogue;
+    public Analogue right_trigger;
+    public Analogue left_trigger;
 
     public Gamepad pad;
 
@@ -35,8 +32,8 @@ public class Controller {
         dpad_left = new Button(() -> pad.dpad_left);
         right_bumper = new Button(() -> pad.right_bumper);
         left_bumper = new Button(() -> pad.left_bumper);
-        right_trigger = new Button(() -> pad.right_trigger > 0.05);
-        left_trigger = new Button(() -> pad.left_trigger > 0.05);
+        right_trigger = new Analogue(() -> pad.right_trigger, () -> pad.right_trigger > 0.05);
+        left_trigger = new Analogue(() -> pad.left_trigger, () -> pad.left_trigger > 0.05);
         this.pad = pad;
 
         update();
@@ -55,7 +52,5 @@ public class Controller {
         left_bumper.update();
         right_trigger.update();
         left_trigger.update();
-        right_trigger_analogue = pad.right_trigger;
-        left_trigger_analogue = pad.left_trigger;
     }
 }
