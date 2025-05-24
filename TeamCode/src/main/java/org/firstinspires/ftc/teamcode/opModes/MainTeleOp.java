@@ -38,7 +38,7 @@ public class MainTeleOp extends LinearOpMode {
             }
 
             telemetry.addData("Trigger: ", pad1.right_trigger.poll());
-            telemetry.addData("TriggerPoll: ", pad1.right_trigger.poll());
+            telemetry.addData("TriggerIsPressed: ", pad1.right_trigger.isPressed());
             telemetry.addData("timesPressed: ", count);
             telemetry.addData("doubleTapped: ", count3);
             telemetry.addData("durationPressed: ", pad1.right_trigger.durationPressed());
