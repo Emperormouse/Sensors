@@ -41,19 +41,28 @@ public class CameraTest extends LinearOpMode {
 
     static class testPipeline extends OpenCvPipeline {
         private Mat hsv = new Mat();
-        private Mat mask = new Mat();
+        private Mat mask1 = new Mat();
+        private Mat mask2 = new Mat();
+        private Mat fullMask = new Mat();
         private Mat hierarchy = new Mat();
         public double distance;
 
         public Mat processFrame(Mat input) {
             Imgproc.cvtColor(input, hsv, Imgproc.COLOR_RGB2HSV);
 
-            Scalar lowHSV = new Scalar(100, 75, 75);
-            Scalar highHSV = new Scalar(125, 255, 255);
+            Scalar lowHSV1 = new Scalar(0, 75, 75);
+            Scalar highHSV1 = new Scalar(15, 255, 255);
 
-            Core.inRange(hsv, lowHSV, highHSV, mask);
+            Scalar lowHSV2 = new Scalar(345, 75, 75);
+            Scalar highHSV2 = new Scalar(360, 255, 255);
+
+            Core.inRange(hsv, lowHSV1, highHSV1, mask1);
+            Core.inRange(hsv, lowHSV2, highHSV2, mask2);
+
+            Core.bitwise_or(mask1, mask2, fullMask);
+
             ArrayList<MatOfPoint> contours = new ArrayList<>();
-            Imgproc.findContours(mask, contours, hierarchy, Imgproc.RETR_EXTERNAL, Imgproc.CHAIN_APPROX_SIMPLE);
+            Imgproc.findContours(fullMask, contours, hierarchy, Imgproc.RETR_EXTERNAL, Imgproc.CHAIN_APPROX_SIMPLE);
 
             double maxArea = 0;
             MatOfPoint maxContour = null;
@@ -67,9 +76,10 @@ public class CameraTest extends LinearOpMode {
 
             if (maxContour != null) {
                 Rect boundingBox = Imgproc.boundingRect(maxContour);
+                Imgproc.rectangle(input, boundingBox, new Scalar(255, 0, 0));
+
                 int height = boundingBox.height;
                 distance = (700.7782976 - (double)height*0.0485562)/(double)(height-1);
-                Imgproc.rectangle(input, boundingBox, new Scalar(255, 0, 0));
             }
 
             return input;
