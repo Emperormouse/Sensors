@@ -40,11 +40,14 @@ public class CameraTest extends LinearOpMode {
             ArrayList<Sample> samplesCopy = pipeline.samples;
             samplesCopy.sort((Sample x, Sample y) -> (int)(y.area - x.area));
             for (Sample sample : samplesCopy) {
-                telemetry.addLine("\n" + sample.color + " Sample:");
-                telemetry.addData("Estimated distance: ", sample.distance);
-                telemetry.addData("Area: ", sample.area);
-                telemetry.addData("Coverage: ", sample.coverage);
+                if (sample != null) {
+                    telemetry.addLine("\n" + sample.color + " Sample:");
+                    telemetry.addData("Estimated distance: ", sample.distance);
+                    telemetry.addData("Area: ", sample.area);
+                    telemetry.addData("Coverage: ", sample.coverage);
+                }
             }
+            telemetry.addLine();
             telemetry.update();
         }
     }
@@ -81,11 +84,11 @@ public class CameraTest extends LinearOpMode {
 
             //Red is on the top and bottom of the HSV spectrum, so they both have to covered and then combined
             //Bottom part
-            Scalar lowHSV1 = new Scalar(0, 75, 50);
+            Scalar lowHSV1 = new Scalar(0, 125, 40);
             Scalar highHSV1 = new Scalar(15, 255, 255);
 
             //Top part
-            Scalar lowHSV2 = new Scalar(345, 75, 50);
+            Scalar lowHSV2 = new Scalar(345, 125, 40);
             Scalar highHSV2 = new Scalar(360, 255, 255);
 
             Core.inRange(hsv, lowHSV1, highHSV1, mask1);
@@ -105,7 +108,7 @@ public class CameraTest extends LinearOpMode {
                 double area = Core.sumElems(boxSubmat).val[0];
                 double coverage = area / boundingBox.area();
 
-                if (coverage > 210) {
+                if (area > 100_000 && coverage > 190 && boundingBox.width*1.2 > boundingBox.height) {
                     Imgproc.rectangle(fullMask, boundingBox, new Scalar(255, 255, 255));
                     Imgproc.rectangle(input, boundingBox, new Scalar(0, 255, 0));
 
@@ -122,7 +125,7 @@ public class CameraTest extends LinearOpMode {
             samples = tmpSamples;
 
 
-            return input;
+            return fullMask;
         }
     }
 }
