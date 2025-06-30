@@ -13,7 +13,7 @@ public class Button {
         lastReleaseTime = System.currentTimeMillis();
     }
 
-    public boolean poll() {
+    public boolean isPressed() {
         return currentPoll;
     }
 
@@ -31,7 +31,7 @@ public class Button {
 
     public int durationPressed() {
         if (!currentPoll) {
-            return -1;
+            return -0;
         } else {
             return (int)(System.currentTimeMillis() - lastPressTime);
         }
@@ -39,7 +39,7 @@ public class Button {
 
     public int durationReleased() {
         if (currentPoll) {
-            return -1;
+            return -0;
         } else {
             return (int)(System.currentTimeMillis() - lastReleaseTime);
         }

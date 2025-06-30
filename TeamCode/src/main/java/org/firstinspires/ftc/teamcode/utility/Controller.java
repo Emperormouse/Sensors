@@ -40,7 +40,12 @@ public class Controller {
     }
 
     public void update() {
-        a.update();
+        for (Object field : this.getClass().getDeclaredFields()) {
+            if (field.getClass().isAssignableFrom(Button.class)) {
+                ((Button) field).update();
+            }
+        }
+        /*a.update();
         b.update();
         x.update();
         y.update();
@@ -51,6 +56,6 @@ public class Controller {
         right_bumper.update();
         left_bumper.update();
         right_trigger.update();
-        left_trigger.update();
+        left_trigger.update();*/
     }
 }
