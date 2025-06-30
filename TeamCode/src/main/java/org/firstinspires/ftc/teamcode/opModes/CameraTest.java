@@ -41,7 +41,9 @@ public class CameraTest extends LinearOpMode {
         camera.setPipeline(pipeline);
 
         camera.openCameraDevice();
-        camera.startStreaming(640, 480, OpenCvCameraRotation.UPSIDE_DOWN);
+        int width = 640;
+        int height = 480;
+        camera.startStreaming(width, height, OpenCvCameraRotation.UPSIDE_DOWN);
 
         while(!isStarted()) {
             ArrayList<Sample> samplesCopy = pipeline.samples;
@@ -66,88 +68,118 @@ public class CameraTest extends LinearOpMode {
     }
     static class Sample {
         public double distance;
+        public Point centerOffset;
         public double coverage;
         public double area;
         public Color color;
 
         public Sample(double distance, double coverage, double area, Color color) {
             this.distance = distance;
-            this.coverage = coverage;
-            this.area = area;
+            this.coverage = coverage; //Mostly just useful for debugging
+            this.area = area; //Mostly just useful for debugging
             this.color = color;
         }
     }
 
     static class testPipeline extends OpenCvPipeline {
         private Mat hsv = new Mat();
-        private Mat mask1 = new Mat();
-        private Mat mask2 = new Mat();
-        private Mat fullMask = new Mat();
         private Mat hierarchy = new Mat();
+        private Color[] colors = Color.values();
         public ArrayList<Sample> samples = new ArrayList<>();
 
         public Mat processFrame(Mat input) {
             Imgproc.cvtColor(input, hsv, Imgproc.COLOR_RGB2HSV);
 
+            //===RED===
             //Red is on the top and bottom of the HSV spectrum, so they both have to covered and then combined
             //Bottom part
-            Scalar lowHSV1 = new Scalar(0, 100, 60);
-            Scalar highHSV1 = new Scalar(10, 255, 255);
-
+            Scalar lowHSV1Red = new Scalar(0, 100, 40);
+            Scalar highHSV1Red = new Scalar(5, 255, 255);
             //Top part
-            Scalar lowHSV2 = new Scalar(350, 100, 60);
-            Scalar highHSV2 = new Scalar(360, 255, 255);
+            Scalar lowHSV2Red = new Scalar(175, 100, 40);
+            Scalar highHSV2Red = new Scalar(180, 255, 255);
 
-            Core.inRange(hsv, lowHSV1, highHSV1, mask1);
-            Core.inRange(hsv, lowHSV2, highHSV2, mask2);
-
+            Mat redMask1 = new Mat();
+            Mat redMask2 = new Mat();
+            Core.inRange(hsv, lowHSV1Red, highHSV1Red, redMask1);
+            Core.inRange(hsv, lowHSV2Red, highHSV2Red, redMask2);
             //Combines the two masks
-            Core.bitwise_or(mask1, mask2, fullMask);
-            Mat kernel = Imgproc.getStructuringElement(Imgproc.MORPH_RECT, new Size(9, 9));
-            Imgproc.dilate(fullMask, fullMask, kernel);
+            Mat redMask = new Mat();
+            Core.bitwise_or(redMask1, redMask2, redMask);
 
-            Mat inverted = new Mat();
-            Core.bitwise_not(fullMask, inverted);
+            //===BLUE===
+            Scalar lowHSVBlue = new Scalar(105, 100, 40);
+            Scalar highHSVBlue = new Scalar(125, 255, 255);
 
-            Mat mask = new Mat(inverted.height()+2, inverted.width()+2, CV_8UC1, new Scalar(0));
-            Imgproc.floodFill(
-                    inverted, mask, new Point(0.0, 0.0), new Scalar(255), null,
-                    new Scalar(0), new Scalar(0),
-                    4 | FLOODFILL_MASK_ONLY | (255 << 8)
-            );
+            Mat blueMask = new Mat();
+            Core.inRange(hsv, lowHSVBlue, highHSVBlue, blueMask);
 
-            mask = mask.submat(1, mask.rows()-2, 1, mask.cols()-2);
-            Core.bitwise_not(mask, mask);
+            //I haven't tested yellow because I don't have a yellow sample
+            //===YELLOW===
+            Scalar lowHSVYellow = new Scalar(23, 100, 40);
+            Scalar highHSVYellow = new Scalar(33, 255, 255);
 
-            ArrayList<MatOfPoint> contours = new ArrayList<>();
-            Imgproc.findContours(mask, contours, hierarchy, Imgproc.RETR_EXTERNAL, Imgproc.CHAIN_APPROX_SIMPLE);
+            Mat yellowMask = new Mat();
+            Core.inRange(hsv, lowHSVYellow, highHSVYellow, yellowMask);
 
             ArrayList<Sample> tmpSamples = new ArrayList<>();
-            for (MatOfPoint contour : contours) {
-                Rect boundingBox = Imgproc.boundingRect(contour);
+            for (Color color : colors) {
+                Mat mask = null;
+                switch (color) {
+                    case RED: mask = redMask; break;
+                    case BLUE: mask = blueMask; break;
+                    case YELLOW: mask = yellowMask; break;
+                }
 
-                Mat boxSubmat = mask.submat(boundingBox);
-                double area = Core.sumElems(boxSubmat).val[0];
-                double coverage = area / boundingBox.area(); //0-255 scale of how much of bounding box contains red pixels
+                //Removes noise by going through every 5x5 area and making them all the median color (which is either black or white)
+                Imgproc.medianBlur(mask, mask, 5);
 
-                if (area > 750_000 && coverage > 210 && boundingBox.width*1.15 > boundingBox.height) {
-                    Imgproc.rectangle(mask, boundingBox, new Scalar(255, 255, 255));
-                    Imgproc.rectangle(input, boundingBox, new Scalar(0, 255, 0));
+                ArrayList<MatOfPoint> contours = new ArrayList<>();
+                Imgproc.findContours(mask, contours, hierarchy, Imgproc.RETR_EXTERNAL, Imgproc.CHAIN_APPROX_SIMPLE);
 
-                    int height = boundingBox.height;
-                    double distance = (700.7782976 - (double)height*0.0485562)/(double)(height-1); //Equation determined using regression
-                    tmpSamples.add(new Sample (
-                            distance,
-                            coverage,
-                            area,
-                            Color.RED
-                    ));
+
+                for (MatOfPoint contour : contours) {
+                    Rect boundingBox = Imgproc.boundingRect(contour);
+
+                    // Shrinks the bounding box by 0.9, since the samples always look rough around the edges
+                    Point center = new Point(boundingBox.x + boundingBox.width/2.0, boundingBox.y + boundingBox.height/2.0);
+                    int shrunkWidth = (int)(boundingBox.width*0.9);
+                    int shrunkHeight = (int)(boundingBox.height*0.9);
+                    boundingBox = new Rect(
+                            (int)center.x - shrunkWidth/2,
+                            (int)center.y - shrunkHeight/2,
+                            shrunkWidth,
+                            shrunkHeight
+                    );
+
+                    // Determine how much of the bounding box is filled with white pixels, which
+                    // kind of determines how similar to a rectangle the shape is
+                    Mat boxSubmat = mask.submat(boundingBox);
+                    double area = Core.sumElems(boxSubmat).val[0];
+                    double coverage = area / boundingBox.area(); //0-255 scale of how much of bounding box contains white pixels
+
+                    if (area > 100_000 && coverage > 240 && boundingBox.width*1.15 > boundingBox.height) { //Might as well check that the object is not taller than it is wide
+                        Imgproc.rectangle(mask, boundingBox, new Scalar(255, 255, 255));
+                        Imgproc.rectangle(input, boundingBox, new Scalar(0, 255, 0));
+
+                        int height = boundingBox.height;
+                        double distance = (700.7782976 - (double)height*0.0485562)/(double)(height-1); //Equation determined using regression
+                        tmpSamples.add(new Sample (
+                                distance,
+                                coverage,
+                                area,
+                                color
+                        ));
+                    }
                 }
             }
+
+
+
             samples = tmpSamples;
 
 
-            return mask;
+            return input;
         }
     }
 }
