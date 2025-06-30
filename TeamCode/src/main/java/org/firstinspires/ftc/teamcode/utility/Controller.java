@@ -2,6 +2,8 @@ package org.firstinspires.ftc.teamcode.utility;
 
 import com.qualcomm.robotcore.hardware.Gamepad;
 
+import java.lang.reflect.Field;
+
 public class Controller {
     public Button a;
     public Button b;
@@ -39,23 +41,15 @@ public class Controller {
         update();
     }
 
+    //Loop through each button and update it
     public void update() {
-        for (Object field : this.getClass().getDeclaredFields()) {
-            if (field.getClass().isAssignableFrom(Button.class)) {
-                ((Button) field).update();
-            }
+        for (Field f : this.getClass().getDeclaredFields()) {
+            try {
+                Object obj = f.get(this);
+                if (obj instanceof Button) {
+                    ((Button)obj).update();
+                }
+            } catch(Exception e) {}
         }
-        /*a.update();
-        b.update();
-        x.update();
-        y.update();
-        dpad_down.update();
-        dpad_up.update();
-        dpad_right.update();
-        dpad_left.update();
-        right_bumper.update();
-        left_bumper.update();
-        right_trigger.update();
-        left_trigger.update();*/
     }
 }

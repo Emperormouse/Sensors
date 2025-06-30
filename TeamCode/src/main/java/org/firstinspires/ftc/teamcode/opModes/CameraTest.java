@@ -1,5 +1,12 @@
 package org.firstinspires.ftc.teamcode.opModes;
 
+import static org.opencv.core.CvType.CV_8UC1;
+import static org.opencv.imgproc.Imgproc.FLOODFILL_MASK_ONLY;
+import static org.opencv.imgproc.Imgproc.contourArea;
+import static org.opencv.imgproc.Imgproc.medianBlur;
+import org.opencv.core.*;
+import org.opencv.imgproc.Imgproc;
+
 import android.annotation.SuppressLint;
 
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
@@ -9,6 +16,7 @@ import org.firstinspires.ftc.robotcore.external.hardware.camera.WebcamName;
 import org.opencv.core.Core;
 import org.opencv.core.Mat;
 import org.opencv.core.MatOfPoint;
+import org.opencv.core.Point;
 import org.opencv.core.Rect;
 import org.opencv.core.Scalar;
 import org.opencv.imgproc.Imgproc;
@@ -33,8 +41,7 @@ public class CameraTest extends LinearOpMode {
         camera.setPipeline(pipeline);
 
         camera.openCameraDevice();
-
-        camera.startStreaming(320, 240, OpenCvCameraRotation.UPSIDE_DOWN);
+        camera.startStreaming(640, 480, OpenCvCameraRotation.UPSIDE_DOWN);
 
         while(!isStarted()) {
             ArrayList<Sample> samplesCopy = pipeline.samples;
@@ -84,11 +91,11 @@ public class CameraTest extends LinearOpMode {
 
             //Red is on the top and bottom of the HSV spectrum, so they both have to covered and then combined
             //Bottom part
-            Scalar lowHSV1 = new Scalar(0, 125, 40);
-            Scalar highHSV1 = new Scalar(15, 255, 255);
+            Scalar lowHSV1 = new Scalar(0, 100, 60);
+            Scalar highHSV1 = new Scalar(10, 255, 255);
 
             //Top part
-            Scalar lowHSV2 = new Scalar(345, 125, 40);
+            Scalar lowHSV2 = new Scalar(350, 100, 60);
             Scalar highHSV2 = new Scalar(360, 255, 255);
 
             Core.inRange(hsv, lowHSV1, highHSV1, mask1);
@@ -96,20 +103,35 @@ public class CameraTest extends LinearOpMode {
 
             //Combines the two masks
             Core.bitwise_or(mask1, mask2, fullMask);
+            Mat kernel = Imgproc.getStructuringElement(Imgproc.MORPH_RECT, new Size(9, 9));
+            Imgproc.dilate(fullMask, fullMask, kernel);
+
+            Mat inverted = new Mat();
+            Core.bitwise_not(fullMask, inverted);
+
+            Mat mask = new Mat(inverted.height()+2, inverted.width()+2, CV_8UC1, new Scalar(0));
+            Imgproc.floodFill(
+                    inverted, mask, new Point(0.0, 0.0), new Scalar(255), null,
+                    new Scalar(0), new Scalar(0),
+                    4 | FLOODFILL_MASK_ONLY | (255 << 8)
+            );
+
+            mask = mask.submat(1, mask.rows()-2, 1, mask.cols()-2);
+            Core.bitwise_not(mask, mask);
 
             ArrayList<MatOfPoint> contours = new ArrayList<>();
-            Imgproc.findContours(fullMask, contours, hierarchy, Imgproc.RETR_EXTERNAL, Imgproc.CHAIN_APPROX_SIMPLE);
+            Imgproc.findContours(mask, contours, hierarchy, Imgproc.RETR_EXTERNAL, Imgproc.CHAIN_APPROX_SIMPLE);
 
             ArrayList<Sample> tmpSamples = new ArrayList<>();
             for (MatOfPoint contour : contours) {
                 Rect boundingBox = Imgproc.boundingRect(contour);
 
-                Mat boxSubmat = fullMask.submat(boundingBox);
+                Mat boxSubmat = mask.submat(boundingBox);
                 double area = Core.sumElems(boxSubmat).val[0];
-                double coverage = area / boundingBox.area();
+                double coverage = area / boundingBox.area(); //0-255 scale of how much of bounding box contains red pixels
 
-                if (area > 100_000 && coverage > 190 && boundingBox.width*1.2 > boundingBox.height) {
-                    Imgproc.rectangle(fullMask, boundingBox, new Scalar(255, 255, 255));
+                if (area > 750_000 && coverage > 210 && boundingBox.width*1.15 > boundingBox.height) {
+                    Imgproc.rectangle(mask, boundingBox, new Scalar(255, 255, 255));
                     Imgproc.rectangle(input, boundingBox, new Scalar(0, 255, 0));
 
                     int height = boundingBox.height;
@@ -125,7 +147,7 @@ public class CameraTest extends LinearOpMode {
             samples = tmpSamples;
 
 
-            return fullMask;
+            return mask;
         }
     }
 }

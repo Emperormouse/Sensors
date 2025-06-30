@@ -20,11 +20,18 @@ public class MainTeleOp extends LinearOpMode {
 
         waitForStart();
 
+        int a_count = 0;
+
         int rt_count = 0;
         int rt_dbl_count = 0;
         int rt_release_count = 0;
+
         while (opModeIsActive()) {
             //odo.update();
+
+            if (pad1.a.justPressed()) {
+                a_count += 1;
+            }
 
             if (pad1.right_trigger.justPressed()) {
                 rt_count += 1;
@@ -36,10 +43,15 @@ public class MainTeleOp extends LinearOpMode {
                 rt_release_count += 1;
             }
 
-            telemetry.addData("Trigger: ", pad1.right_trigger.val);
-            telemetry.addData("TriggerIsPressed: ", pad1.right_trigger.isPressed());
+            telemetry.addLine("A Button:");
+            telemetry.addData("IsPressed: ", pad1.a.isPressed());
+            telemetry.addData("timesPressed: ", a_count);
+
+            telemetry.addLine("\nRight Trigger:");
+            telemetry.addData("AnalogueValue: ", pad1.right_trigger.val);
+            telemetry.addData("IsPressed: ", pad1.right_trigger.isPressed());
             telemetry.addData("timesPressed: ", rt_count);
-            telemetry.addData("doubleTapped: ", rt_dbl_count);
+            telemetry.addData("timesDoubleTapped: ", rt_dbl_count);
             telemetry.addData("durationPressed: ", pad1.right_trigger.durationPressed());
             telemetry.addData("timesReleased: ", rt_release_count);
             telemetry.addData("durationReleased: ", pad1.right_trigger.durationReleased());
