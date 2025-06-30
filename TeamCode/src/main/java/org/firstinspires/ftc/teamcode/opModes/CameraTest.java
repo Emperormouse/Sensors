@@ -29,6 +29,8 @@ import java.util.ArrayList;
 
 @Autonomous(name = "Camera Test")
 public class CameraTest extends LinearOpMode {
+    private static final int width = 640;
+    private static final int height = 480;
 
     @SuppressLint("DefaultLocale")
     public void runOpMode() throws InterruptedException {
@@ -41,8 +43,6 @@ public class CameraTest extends LinearOpMode {
         camera.setPipeline(pipeline);
 
         camera.openCameraDevice();
-        int width = 640;
-        int height = 480;
         camera.startStreaming(width, height, OpenCvCameraRotation.UPSIDE_DOWN);
 
         while(!isStarted()) {
@@ -52,8 +52,7 @@ public class CameraTest extends LinearOpMode {
                 if (sample != null) {
                     telemetry.addLine("\n" + sample.color + " Sample:");
                     telemetry.addData("Estimated distance: ", sample.distance);
-                    telemetry.addData("Area: ", sample.area);
-                    telemetry.addData("Coverage: ", sample.coverage);
+                    telemetry.addData("Center offset: ", sample.centerOffset);
                 }
             }
             telemetry.addLine();
@@ -68,23 +67,35 @@ public class CameraTest extends LinearOpMode {
     }
     static class Sample {
         public double distance;
-        public Point centerOffset;
-        public double coverage;
-        public double area;
+        public double centerOffset;
         public Color color;
+        public Point center;
+        public double coverage; //Mostly just useful for debugging
+        public double area; //Mostly just useful for debugging
 
-        public Sample(double distance, double coverage, double area, Color color) {
+        public Sample(double distance, Point center, Color color, double coverage, double area) {
             this.distance = distance;
-            this.coverage = coverage; //Mostly just useful for debugging
-            this.area = area; //Mostly just useful for debugging
+            this.center = center;
             this.color = color;
+            this.coverage = coverage;
+            this.area = area;
+
+            centerOffset = center.x - (width/2);
         }
     }
 
     static class testPipeline extends OpenCvPipeline {
-        private Mat hsv = new Mat();
-        private Mat hierarchy = new Mat();
-        private Color[] colors = Color.values();
+        //All mats must be declared here to prevent memory leaks, filling up ram over time
+        private final Mat hsv = new Mat();
+        private final Mat hierarchy = new Mat();
+        private final Mat redMask1 = new Mat();
+        private final Mat redMask2 = new Mat();
+        private final Mat redMask = new Mat();
+        private final Mat blueMask = new Mat();
+        private final Mat yellowMask = new Mat();
+        private Mat mask = null;
+
+        private final Color[] colors = Color.values();
         public ArrayList<Sample> samples = new ArrayList<>();
 
         public Mat processFrame(Mat input) {
@@ -93,38 +104,31 @@ public class CameraTest extends LinearOpMode {
             //===RED===
             //Red is on the top and bottom of the HSV spectrum, so they both have to covered and then combined
             //Bottom part
-            Scalar lowHSV1Red = new Scalar(0, 100, 40);
+            Scalar lowHSV1Red = new Scalar(0, 100, 60);
             Scalar highHSV1Red = new Scalar(5, 255, 255);
             //Top part
-            Scalar lowHSV2Red = new Scalar(175, 100, 40);
+            Scalar lowHSV2Red = new Scalar(175, 100, 60);
             Scalar highHSV2Red = new Scalar(180, 255, 255);
 
-            Mat redMask1 = new Mat();
-            Mat redMask2 = new Mat();
+
             Core.inRange(hsv, lowHSV1Red, highHSV1Red, redMask1);
             Core.inRange(hsv, lowHSV2Red, highHSV2Red, redMask2);
             //Combines the two masks
-            Mat redMask = new Mat();
             Core.bitwise_or(redMask1, redMask2, redMask);
 
             //===BLUE===
-            Scalar lowHSVBlue = new Scalar(105, 100, 40);
+            Scalar lowHSVBlue = new Scalar(105, 100, 60);
             Scalar highHSVBlue = new Scalar(125, 255, 255);
-
-            Mat blueMask = new Mat();
             Core.inRange(hsv, lowHSVBlue, highHSVBlue, blueMask);
 
             //I haven't tested yellow because I don't have a yellow sample
             //===YELLOW===
-            Scalar lowHSVYellow = new Scalar(23, 100, 40);
+            Scalar lowHSVYellow = new Scalar(23, 100, 60);
             Scalar highHSVYellow = new Scalar(33, 255, 255);
-
-            Mat yellowMask = new Mat();
             Core.inRange(hsv, lowHSVYellow, highHSVYellow, yellowMask);
 
             ArrayList<Sample> tmpSamples = new ArrayList<>();
             for (Color color : colors) {
-                Mat mask = null;
                 switch (color) {
                     case RED: mask = redMask; break;
                     case BLUE: mask = blueMask; break;
@@ -136,7 +140,6 @@ public class CameraTest extends LinearOpMode {
 
                 ArrayList<MatOfPoint> contours = new ArrayList<>();
                 Imgproc.findContours(mask, contours, hierarchy, Imgproc.RETR_EXTERNAL, Imgproc.CHAIN_APPROX_SIMPLE);
-
 
                 for (MatOfPoint contour : contours) {
                     Rect boundingBox = Imgproc.boundingRect(contour);
@@ -158,17 +161,18 @@ public class CameraTest extends LinearOpMode {
                     double area = Core.sumElems(boxSubmat).val[0];
                     double coverage = area / boundingBox.area(); //0-255 scale of how much of bounding box contains white pixels
 
-                    if (area > 100_000 && coverage > 240 && boundingBox.width*1.15 > boundingBox.height) { //Might as well check that the object is not taller than it is wide
+                    if (area > 50_000 && coverage > 240 && boundingBox.width*1.15 > boundingBox.height) { //Might as well check that the object is not taller than it is wide
                         Imgproc.rectangle(mask, boundingBox, new Scalar(255, 255, 255));
                         Imgproc.rectangle(input, boundingBox, new Scalar(0, 255, 0));
 
-                        int height = boundingBox.height;
-                        double distance = (700.7782976 - (double)height*0.0485562)/(double)(height-1); //Equation determined using regression
+                        int height = (int)(boundingBox.height*1.1);
+                        double distance = 2*(700.7782976 - (double)height*0.0485562)/(double)(height-1); //Equation determined using regression
                         tmpSamples.add(new Sample (
                                 distance,
+                                center,
+                                color,
                                 coverage,
-                                area,
-                                color
+                                area
                         ));
                     }
                 }
