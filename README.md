@@ -14,4 +14,5 @@ The "FieldCentric" TeleOp Opmode contains the code that I wrote after last year'
 ## Improved Gamepad Class
 We might not use this, but I think that it makes writing the controls for tele-op easier. The three files "Controller.java", "Button.java", and "Anologue.java" in the utility folder contain the code for an improved version of the Gamepad class that FTC provides, which has methods for checking if a button/analogue device is pressed, just been pressed, just been released, just been double-tapped, how long it's been pressed, and how long it's been released. analogue devices include the triggers and analogue sticks, and have the same functionality as buttons but you can also check their exact values. A demo of the Controller class is in the ButtonTest.java tele-op mode.
 
-
+## Odometer?
+I didn't write code for an autonomous odomoter system because Road Runner does all of the math for you, and I think that we should use Road Runner. Tele-Op code like the Field-Centric code does require some odometer math though.
