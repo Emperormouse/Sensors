@@ -3,11 +3,10 @@ package org.firstinspires.ftc.teamcode.opModes;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 
-import org.firstinspires.ftc.teamcode.utility.Button;
 import org.firstinspires.ftc.teamcode.utility.Controller;
 
-@TeleOp(name = "MainTele")
-public class MainTeleOp extends LinearOpMode {
+@TeleOp(name = "ButtonTest")
+public class ButtonTest extends LinearOpMode {
     public void waitSeconds(double seconds) {
         long startTime = System.currentTimeMillis();
         while(System.currentTimeMillis() - startTime < (seconds * 1000));
