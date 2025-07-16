@@ -4,7 +4,7 @@ import com.qualcomm.robotcore.hardware.Gamepad;
 
 import java.lang.reflect.Field;
 
-public class Controller {
+public class ImprovedGamepad {
     public Button a;
     public Button b;
     public Button x;
@@ -23,7 +23,7 @@ public class Controller {
 
     public Gamepad pad;
 
-    public Controller(Gamepad pad) {
+    public ImprovedGamepad(Gamepad pad) {
         a = new Button(() -> pad.a);
         b = new Button(() -> pad.b);
         x = new Button(() -> pad.x);
@@ -49,7 +49,7 @@ public class Controller {
                 if (obj instanceof Button) {
                     ((Button)obj).update();
                 }
-            } catch(Exception e) {}
+            } catch(Exception e) {continue;}
         }
     }
 }

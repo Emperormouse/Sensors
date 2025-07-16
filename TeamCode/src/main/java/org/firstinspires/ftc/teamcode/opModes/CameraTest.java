@@ -11,6 +11,7 @@ import android.annotation.SuppressLint;
 
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
+import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 
 import org.firstinspires.ftc.robotcore.external.hardware.camera.WebcamName;
 import org.opencv.core.Core;
@@ -28,37 +29,36 @@ import org.openftc.easyopencv.OpenCvPipeline;
 import java.util.ArrayList;
 
 @Autonomous(name = "Camera Test")
-public class CameraTest extends LinearOpMode {
+public class CameraTest extends OpMode {
     private static final int width = 640;
     private static final int height = 480;
+    private final TestPipeline pipeline = new TestPipeline();
 
-    @SuppressLint("DefaultLocale")
-    public void runOpMode() throws InterruptedException {
+    public void init() {
         int cameraMonitorViewId = hardwareMap.appContext.getResources().getIdentifier("cameraMonitorViewId", "id", hardwareMap.appContext.getPackageName());
         WebcamName webcamName = hardwareMap.get(WebcamName.class, "Camera");
         OpenCvCamera camera = OpenCvCameraFactory.getInstance().createWebcam(webcamName, cameraMonitorViewId);
 
         camera.setViewportRenderer(OpenCvCamera.ViewportRenderer.NATIVE_VIEW);
-        testPipeline pipeline = new testPipeline();
         camera.setPipeline(pipeline);
 
         camera.openCameraDevice();
         camera.startStreaming(width, height, OpenCvCameraRotation.UPSIDE_DOWN);
-
-        while(!isStarted()) {
-            ArrayList<Sample> samplesCopy = pipeline.samples;
-            samplesCopy.sort((Sample x, Sample y) -> (int)(y.area - x.area));
-            for (Sample sample : samplesCopy) {
-                if (sample != null) {
-                    telemetry.addLine("\n" + sample.color + " Sample:");
-                    telemetry.addData("Estimated distance: ", sample.distance);
-                    telemetry.addData("Center offset: ", sample.centerOffset);
-                }
-            }
-            telemetry.addLine();
-            telemetry.update();
-        }
     }
+
+    public void loop() {
+        ArrayList<Sample> samplesCopy = pipeline.samples;
+        samplesCopy.sort((Sample x, Sample y) -> (int)(y.area - x.area));
+        for (Sample sample : samplesCopy) {
+            if (sample != null) {
+                telemetry.addLine("\n" + sample.color + " Sample:");
+                telemetry.addData("Estimated distance: ", sample.distance);
+                telemetry.addData("Center offset: ", sample.centerOffset);
+            }
+        }
+        telemetry.addLine();
+    }
+
 
     enum Color {
         RED,
@@ -84,7 +84,7 @@ public class CameraTest extends LinearOpMode {
         }
     }
 
-    static class testPipeline extends OpenCvPipeline {
+    static class TestPipeline extends OpenCvPipeline {
         //All mats must be declared here to prevent memory leaks, filling up ram over time
         private final Mat hsv = new Mat();
         private final Mat hierarchy = new Mat();
