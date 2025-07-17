@@ -18,24 +18,34 @@ public class ImprovedGamepad {
     public Button right_bumper;
     public Button left_bumper;
 
+    public Button start;
+    public Button options;
+
     public Analogue right_trigger;
     public Analogue left_trigger;
 
-    public Gamepad pad;
+    public Gamepad pad; //Reference to regular gamepad
 
     public ImprovedGamepad(Gamepad pad) {
         a = new Button(() -> pad.a);
         b = new Button(() -> pad.b);
         x = new Button(() -> pad.x);
         y = new Button(() -> pad.y);
+
         dpad_down = new Button(() -> pad.dpad_down);
         dpad_up = new Button(() -> pad.dpad_up);
         dpad_right = new Button(() -> pad.dpad_right);
         dpad_left = new Button(() -> pad.dpad_left);
+
         right_bumper = new Button(() -> pad.right_bumper);
         left_bumper = new Button(() -> pad.left_bumper);
+
+        start = new Button(() -> pad.start);
+        options = new Button(() -> pad.options);
+
         right_trigger = new Analogue(() -> pad.right_trigger, () -> pad.right_trigger > 0.05);
         left_trigger = new Analogue(() -> pad.left_trigger, () -> pad.left_trigger > 0.05);
+
         this.pad = pad;
 
         update();
