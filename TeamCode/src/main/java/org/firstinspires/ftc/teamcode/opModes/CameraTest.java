@@ -32,7 +32,7 @@ import java.util.ArrayList;
 public class CameraTest extends OpMode {
     private static final int width = 640;
     private static final int height = 480;
-    private final TestPipeline pipeline = new TestPipeline();
+    private TestPipeline pipeline;
 
     public void init() {
         int cameraMonitorViewId = hardwareMap.appContext.getResources().getIdentifier("cameraMonitorViewId", "id", hardwareMap.appContext.getPackageName());
@@ -40,10 +40,24 @@ public class CameraTest extends OpMode {
         OpenCvCamera camera = OpenCvCameraFactory.getInstance().createWebcam(webcamName, cameraMonitorViewId);
 
         camera.setViewportRenderer(OpenCvCamera.ViewportRenderer.NATIVE_VIEW);
-        camera.setPipeline(pipeline);
 
-        camera.openCameraDevice();
-        camera.startStreaming(width, height, OpenCvCameraRotation.UPSIDE_DOWN);
+        camera.openCameraDeviceAsync(new OpenCvCamera.AsyncCameraOpenListener()
+        {
+            @Override
+            public void onOpened()
+            {
+                camera.startStreaming(width, height, OpenCvCameraRotation.UPSIDE_DOWN);
+                pipeline = new TestPipeline();
+                camera.setPipeline(pipeline);
+            }
+            @Override
+            public void onError(int errorCode)
+            {
+                telemetry.addData("Error code: ", errorCode);
+                telemetry.update();
+            }
+        });
+
     }
 
     public void loop() {
@@ -51,7 +65,7 @@ public class CameraTest extends OpMode {
         samplesCopy.sort((Sample x, Sample y) -> (int)(y.area - x.area));
         for (Sample sample : samplesCopy) {
             if (sample != null) {
-                telemetry.addLine("\n" + sample.color + " Sample:");
+                telemetry.addLine("\n" + sample.color + " Sample:"); 
                 telemetry.addData("Estimated distance: ", sample.distance);
                 telemetry.addData("Center offset: ", sample.centerOffset);
             }
