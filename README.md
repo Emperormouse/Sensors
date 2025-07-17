@@ -16,3 +16,7 @@ We might not use this, but I think that it makes writing the controls for tele-o
 
 ## RoadRunner Practice
 In the "MeepMeepPractice.java" file I wrote the pathing for a hypothetical auto op-mode which would score 3 specimens and put and extra sample into the observation zone for tele-op. It can be run with the "MeepMeepRun" app which can be found in the drop-down that the "TeamCode" app is on.
+
+https://github.com/user-attachments/assets/84db9d75-fe09-401b-a890-93ba88b4c595
+
+
