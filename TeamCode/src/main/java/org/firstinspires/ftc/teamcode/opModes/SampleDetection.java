@@ -1,16 +1,10 @@
 package org.firstinspires.ftc.teamcode.opModes;
 
-import static org.opencv.core.CvType.CV_8UC1;
-import static org.opencv.imgproc.Imgproc.FLOODFILL_MASK_ONLY;
 import static org.opencv.imgproc.Imgproc.contourArea;
-import static org.opencv.imgproc.Imgproc.medianBlur;
-import org.opencv.core.*;
+
 import org.opencv.imgproc.Imgproc;
 
-import android.annotation.SuppressLint;
-
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
-import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 
 import org.firstinspires.ftc.robotcore.external.hardware.camera.WebcamName;
@@ -20,7 +14,6 @@ import org.opencv.core.MatOfPoint;
 import org.opencv.core.Point;
 import org.opencv.core.Rect;
 import org.opencv.core.Scalar;
-import org.opencv.imgproc.Imgproc;
 import org.openftc.easyopencv.OpenCvCamera;
 import org.openftc.easyopencv.OpenCvCameraFactory;
 import org.openftc.easyopencv.OpenCvCameraRotation;
@@ -28,8 +21,8 @@ import org.openftc.easyopencv.OpenCvPipeline;
 
 import java.util.ArrayList;
 
-@Autonomous(name = "Camera Test")
-public class CameraTest extends OpMode {
+@Autonomous(name = "Sample Detection")
+public class SampleDetection extends OpMode {
     private static final int width = 640;
     private static final int height = 480;
     private TestPipeline pipeline;
