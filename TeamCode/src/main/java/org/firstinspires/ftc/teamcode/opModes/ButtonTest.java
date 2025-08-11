@@ -17,6 +17,7 @@ public class ButtonTest extends OpMode {
     public void init() {}
 
     public void loop() {
+
         if (pad1.a.justPressed()) {
             a_count += 1;
         }

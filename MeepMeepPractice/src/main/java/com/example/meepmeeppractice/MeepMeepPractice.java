@@ -21,7 +21,7 @@ public class MeepMeepPractice {
 
         Action threeSpecimen = new SequentialAction(myBot.getDrive().actionBuilder(new Pose2d(0, -60, PI/2))
             //Hook first specimen
-            .waitSeconds(1.0)
+            .waitSeconds(1.5)
             .lineToY(-35)
             .waitSeconds(2.0)
 
